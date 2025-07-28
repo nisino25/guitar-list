@@ -177,6 +177,7 @@ export default {
 
 <style>
 body {
+  background: #f3f4f6;
   @apply font-sans;
 }
 </style>
