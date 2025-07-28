@@ -29,6 +29,17 @@
       >
         ✖ {{ filteredArtist }}
       </button>
+      <button
+        @click="starFilter = !starFilter"
+        class="px-2 py-1 rounded border text-sm font-medium transition hover:bg-yellow-200"
+        :class="starFilter
+          ? 'bg-yellow-300 text-yellow-900 border-yellow-500 shadow-sm'
+          : 'bg-white text-gray-700 border-gray-300'"
+      >
+        {{ starFilter ? '★' : '☆' }}
+      </button>
+
+
 
     </div>
 
@@ -42,19 +53,30 @@
         @click="handleCardClick(item)"
       >
         <!-- Row 1: Song Name + Plays -->
-        <div class="grid grid-cols-5 gap-2 items-center mb-2">
-          <h2 class="col-span-4 text-xl font-semibold text-gray-800 truncate">
+        <div class="grid grid-cols-5 gap-1 items-center mb-2">
+          <!-- Like Button -->
+          <h2 class="col-span-4 text-lg font-semibold text-gray-800 truncate flex items-center gap-1">
+            <!-- Like Button -->
+            <button
+              @click.stop="toggleStar(item)"
+              class="text-yellow-500 hover:text-yellow-400 transition transform scale-110"
+              :title="item.star == 1 ? 'Unstar' : 'Star'"
+            >
+              {{ item.star == 1 ? '★' : '☆' }}
+            </button>
+
             {{ item.songName }}
           </h2>
+
           <div class="text-right text-sm text-gray-500">
-            <strong>{{ item.plays || '0' }}</strong>回
+            <strong>{{ item.plays || '0' }}回</strong>
           </div>
         </div>
 
         <!-- Row 2: Artist + Timestamp -->
         <div class="flex justify-between text-gray-600 text-sm">
-          <p @click.stop="filterArtist(item.artistName)">🎤&nbsp;&nbsp;{{ item.artistName }}</p>
-          <p><strong>{{ daysAgo(item.timestamp) }}</strong> days ago</p>
+          <p @click.stop="filterArtist(item.artistName)">{{ item.artistName }}</p>
+          <p><strong>{{ daysAgo(item.timestamp) }}</strong> days</p>
         </div>
       </div>
 
@@ -70,10 +92,11 @@ export default {
   data() {
     return {
       fetchedData: null,
-      baseUrl: 'https://script.google.com/macros/s/AKfycbw6ekL53IVT_-mdYm_zqqTHGO6OOapYtihOkdhAzSBgfJy9UJE4yQPCaVCb8wzqtaOtuQ/exec',
+      baseUrl: 'https://script.google.com/macros/s/AKfycbwIrCP2wbwF36WcQn5ogTu3nfLBFSiNdsBxm60XOG39c7QcTOIl35G4tOnXUFRHN3v6Bg/exec',
       sortKey: 'timestamp',
       sortAsc: false,
       filteredArtist: null,
+      starFilter: false,
     };
   },
   methods: {
@@ -156,18 +179,48 @@ export default {
     },
     filterArtist(name){
       this.filteredArtist = name
-    }
+    },
+    toggleStar(song) {
+        const newStar = song.star == 1 ? 0 : 1;
+        song.star = newStar; // Optimistically update UI
+
+        const url = `${this.baseUrl}?callback=jsonpCallback&action=toggleStar&songName=${encodeURIComponent(song.songName)}&artistName=${encodeURIComponent(song.artistName)}`;
+        console.log('-------- toggling star --------');
+        console.log(url);
+        console.log('--------------------------------');
+
+        window.jsonpCallback = (data) => {
+            console.log("API Response (toggleStar):", data);
+        };
+
+        const script = document.createElement("script");
+        script.src = url;
+        script.async = true;
+        document.body.appendChild(script);
+
+        script.onload = () => {
+            document.body.removeChild(script);
+        };
+    },
+
   },
   computed: {
     filteredData() {
-      if(!this.fetchedData) return null;
+        if (!this.fetchedData) return [];
 
-      if (!this.filteredArtist) {
-        return this.fetchedData
-      }
-      return this.fetchedData.filter(item => item.artistName === this.filteredArtist)
-    }
-  },
+        let data = this.fetchedData;
+
+        if (this.filteredArtist) {
+            data = data.filter(item => item.artistName === this.filteredArtist);
+        }
+
+        if (this.starFilter) {
+            data = data.filter(item => item.star === 1);
+        }
+
+        return data;
+    },
+},
   mounted() {
     console.clear();
     this.fetchData();
