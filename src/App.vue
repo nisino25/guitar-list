@@ -49,24 +49,23 @@
       <div
         v-for="(item, index) in filteredData"
         :key="index"
-        class="bg-white rounded-lg shadow-md p-4 hover:shadow-xl transition duration-300 block cursor-pointer"
+        class="bg-white rounded-lg shadow-md p-3 hover:shadow-xl transition duration-300 block cursor-pointer"
         @click="handleCardClick(item)"
       >
         <!-- Row 1: Song Name + Plays -->
-        <div class="grid grid-cols-5 gap-1 items-center mb-2">
+        <div class="grid grid-cols-5 gap-1 items-center mb-1">
           <!-- Like Button -->
           <h2 class="col-span-4 text-lg font-semibold text-gray-800 truncate flex items-center gap-1">
             <!-- Like Button -->
             <button
               @click.stop="toggleStar(item)"
               :class="[
-    item.star == 1 ? 'text-yellow-500 hover:text-yellow-400' : 'text-black hover:text-gray-600',
-    'transition transform scale-110'
-  ]"
+                item.star == 1 ? 'text-yellow-500 hover:text-yellow-400' : 'text-black hover:text-gray-600',
+                'transition transform scale-110 font-normal'
+              ]"
             >
               {{ item.star == 1 ? '★' : '☆' }}
             </button>
-
             {{ item.songName }}
           </h2>
 
