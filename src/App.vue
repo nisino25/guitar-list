@@ -5,7 +5,7 @@
     </h1>
     <div class="flex flex-wrap gap-2 justify-center mb-4">
       <button
-        v-for="key in ['timestamp', 'artistName', 'plays', 'songName']"
+        v-for="key in ['lastPlayedAt', 'artistName', 'plays', 'songName']"
         :key="key"
         @click="sortBy(key)"
         :class="[
@@ -59,8 +59,10 @@
             <!-- Like Button -->
             <button
               @click.stop="toggleStar(item)"
-              class="text-yellow-500 hover:text-yellow-400 transition transform scale-110"
-              :title="item.star == 1 ? 'Unstar' : 'Star'"
+              :class="[
+    item.star == 1 ? 'text-yellow-500 hover:text-yellow-400' : 'text-black hover:text-gray-600',
+    'transition transform scale-110'
+  ]"
             >
               {{ item.star == 1 ? '★' : '☆' }}
             </button>
@@ -76,7 +78,7 @@
         <!-- Row 2: Artist + Timestamp -->
         <div class="flex justify-between text-gray-600 text-sm">
           <p @click.stop="filterArtist(item.artistName)">{{ item.artistName }}</p>
-          <p><strong>{{ daysAgo(item.timestamp) }}</strong> days</p>
+          <p class="text-xs"><strong class="text-sm">{{ daysAgo(item.lastPlayedAt) }}</strong>日前</p>
         </div>
       </div>
 
@@ -92,8 +94,8 @@ export default {
   data() {
     return {
       fetchedData: null,
-      baseUrl: 'https://script.google.com/macros/s/AKfycbwIrCP2wbwF36WcQn5ogTu3nfLBFSiNdsBxm60XOG39c7QcTOIl35G4tOnXUFRHN3v6Bg/exec',
-      sortKey: 'timestamp',
+      baseUrl: 'https://script.google.com/macros/s/AKfycbznvSmhM5j1qnEzuA8Dxkd_Ms9REW1A0zurB7RkG7SkM1VSeHLT4RQfXs2fnybys8vleA/exec',
+      sortKey: 'lastPlayedAt',
       sortAsc: false,
       filteredArtist: null,
       starFilter: false,
@@ -105,7 +107,7 @@ export default {
       window.jsonpCallback = (data) => {
         console.log("API Response (fetchData):", data);
         if (data.success) {
-          this.fetchedData = data.data.sort((a, b) => b.timestamp - a.timestamp);
+          this.fetchedData = data.data.sort((a, b) => b.lastPlayedAt - a.lastPlayedAt);
         } else {
           console.error("Error fetching data:", data.message);
         }
@@ -149,6 +151,7 @@ export default {
     },
     handleCardClick(song) {
       this.incrementWord(song);
+      song.lastPlayedAt = Math.floor(Date.now() / 1000);
       window.open(song.url, "_blank");
     },
     incrementWord(song) {
