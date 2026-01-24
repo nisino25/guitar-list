@@ -149,6 +149,7 @@ export default {
       });
     },
     handleCardClick(song) {
+      console.log(song)
       this.incrementWord(song);
       song.lastPlayedAt = Math.floor(Date.now() / 1000);
       window.open(song.url, "_blank");
