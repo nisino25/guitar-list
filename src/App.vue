@@ -93,7 +93,7 @@ export default {
   data() {
     return {
       fetchedData: null,
-      baseUrl: 'https://script.google.com/macros/s/AKfycbznvSmhM5j1qnEzuA8Dxkd_Ms9REW1A0zurB7RkG7SkM1VSeHLT4RQfXs2fnybys8vleA/exec',
+      baseUrl: 'https://script.google.com/macros/s/AKfycbzjfuola4Kdj5RAfo49ZMYAyKp8olnphPu0ZmdC6_fBlYwcBScRLj489B3pmyfhMhLymg/exec',
       sortKey: 'lastPlayedAt',
       sortAsc: false,
       filteredArtist: null,
