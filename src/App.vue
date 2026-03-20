@@ -16,8 +16,7 @@
         @click="sortBy(key)"
         :class="[
           'px-3 py-1 rounded border text-sm font-medium',
-          sortKey === key ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700',
-          'hover:bg-indigo-100 transition'
+          sortKey === key ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'
         ]"
       >
         <span class="capitalize">
@@ -50,124 +49,119 @@
     </div>
 
 
-    <div>
+    <!-- Modal -->
+    <div
+        v-if="showModal"
+        class="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+      >
 
-        <!-- Modal -->
-        <div
-            v-if="showModal"
-            class="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
-        >
+        <div class="bg-white rounded-xl shadow-xl w-[420px] p-6">
 
-            <div class="bg-white rounded-xl shadow-xl w-[420px] p-6">
-
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Guitar Tuner</h2>
-
-                    <button
-                        @click="closeModal"
-                        class="text-gray-500 hover:text-black"
-                    >
-                        ✕
-                    </button>
-                </div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Guitar Tuner</h2>
 
                 <button
-                    @click="toggleTuner"
-                    class="w-full py-2 mb-6 rounded text-white"
-                    :class="isTuning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'"
+                    @click="closeModal"
+                    class="text-gray-500 hover:text-black"
                 >
-                    {{ isTuning ? 'Stop Tuner' : 'Start Tuner' }}
+                    ✕
                 </button>
-                
-                <!-- audio graph -->
-                <div v-if="currentTuningNote" class="text-center mb-4">
-                  {{ currentTuningNote.note }} : {{ currentTuningNote.pitch }} Hz
-                </div>
-                <hr>
-                <div class="text-center">
-                  <div class="text-lg text-gray-500">
-                      {{ detectedWave?.toFixed(2) }} Hz
-                  </div>
+            </div>
 
-                  <div class="text-lg">
-                      Diff: {{ (detectedWave - currentTuningNote?.pitch)?.toFixed(2) }} Hz
-                  </div>
-                </div>
+            <button
+                @click="toggleTuner"
+                class="w-full py-2 mb-6 rounded text-white"
+                :class="isTuning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'"
+            >
+                {{ isTuning ? 'Stop Tuner' : 'Start Tuner' }}
+            </button>
+            
+            <!-- audio graph -->
+            <div v-if="currentTuningNote" class="text-center mb-4">
+              {{ currentTuningNote.note }} : {{ currentTuningNote.pitch }} Hz
+            </div>
+            <hr>
+            <div class="text-center">
+              <div class="text-lg text-gray-500">
+                  {{ detectedWave?.toFixed(2) }} Hz
+              </div>
+
+              <div class="text-lg">
+                  Diff: {{ (detectedWave - currentTuningNote?.pitch)?.toFixed(2) }} Hz
+              </div>
+            </div>
 
 
-                <!-- <div class="grid grid-cols-2 gap-6 text-center">
+            <!-- <div class="grid grid-cols-2 gap-6 text-center">
 
-                    <div>
-                        <h3 class="text-gray-500 text-sm">Target</h3>
-                        <div class="text-center space-y-2">
+                <div>
+                    <h3 class="text-gray-500 text-sm">Target</h3>
+                    <div class="text-center space-y-2">
 
-                          <div class="text-5xl font-bold">
-                              {{ currentNote || '-' }}
-                          </div>
-
-                          <div class="text-lg text-gray-500">
-                              {{ detectedWave?.toFixed(2) }} Hz
-                          </div>
-
-                          <div class="text-lg">
-                              Diff: {{ diff?.toFixed(2) }} Hz
-                          </div>
-
-                          <div
-                              class="text-xl font-bold"
-                              :class="{
-                                  'text-green-500': Math.abs(diff) < 0.5,
-                                  'text-red-500': diff > 0.5,
-                                  'text-blue-500': diff < -0.5
-                              }"
-                          >
-                              {{ getTuningStatus(diff) }}
-                          </div>
-
+                      <div class="text-5xl font-bold">
+                          {{ currentNote || '-' }}
                       </div>
 
-                    </div>
+                      <div class="text-lg text-gray-500">
+                          {{ detectedWave?.toFixed(2) }} Hz
+                      </div>
 
-                    <div>
-                        <h3 class="text-gray-500 text-sm">Detected</h3>
-                        <div class="text-3xl font-bold text-blue-600">
-                            {{ detectedNote || '-' }}
-                        </div>
-                    </div>
+                      <div class="text-lg">
+                          Diff: {{ diff?.toFixed(2) }} Hz
+                      </div>
 
-                </div> -->
-
-                <!-- show the visual -->
-                <div class="mt-6 mx-auto grid grid-cols-2 gap-4 text-center w-[50%] justify-items-center">
-                  <template v-for="(note,index) in tempStatus" :key="index" >
-                    <div class="flex items-center gap-2">
-                        <div
-                          class='w-6 aspect-square rounded-full'
+                      <div
+                          class="text-xl font-bold"
                           :class="{
-                              'bg-gray-300': note.status === 'not tuned',
-                              'bg-yellow-400': note.status === 'tuning',
-                              'bg-green-500': note.status === 'tuned'
+                              'text-green-500': Math.abs(diff) < 0.5,
+                              'text-red-500': diff > 0.5,
+                              'text-blue-500': diff < -0.5
                           }"
-                          @click="selectNote(note)"
-                        ></div>
-                        <span class="text-gray-700 font-medium">{{ note.note }}</span>
-                    </div>  
-                  </template>
+                      >
+                          {{ getTuningStatus(diff) }}
+                      </div>
+
+                  </div>
+
                 </div>
 
+                <div>
+                    <h3 class="text-gray-500 text-sm">Detected</h3>
+                    <div class="text-3xl font-bold text-blue-600">
+                        {{ detectedNote || '-' }}
+                    </div>
+                </div>
+
+            </div> -->
+
+            <!-- show the visual -->
+            <div class="mt-6 mx-auto grid grid-cols-2 gap-4 text-center w-[50%] justify-items-center">
+              <template v-for="(note,index) in tempStatus" :key="index" >
+                <div class="flex items-center gap-2">
+                    <div
+                      class='w-6 aspect-square rounded-full'
+                      :class="{
+                          'bg-gray-300': note.status === 'not tuned',
+                          'bg-yellow-400': note.status === 'tuning',
+                          'bg-green-500': note.status === 'tuned'
+                      }"
+                      @click="selectNote(note)"
+                    ></div>
+                    <span class="text-gray-700 font-medium">{{ note.note }}</span>
+                </div>  
+              </template>
             </div>
 
         </div>
 
     </div>
 
-
-
     <div v-if="filteredData?.length > 0" class="grid grid-cols-3 gap-4">
       <div
         v-for="(item, index) in filteredData"
         :key="index"
         class="bg-white rounded-lg shadow-md p-3 hover:shadow-xl transition duration-300 block cursor-pointer"
+        :class="getBgColor(item)"
         @click="handleCardClick(item)"
       >
         <!-- Row 1: Song Name + Plays -->
@@ -175,7 +169,7 @@
           <!-- Like Button -->
           <h2 class="col-span-4 text-lg font-semibold text-gray-800 truncate flex items-center gap-1">
             <!-- Like Button -->
-            <button
+            <!-- <button
               @click.stop="toggleStar(item)"
               :class="[
                 item.star == 1 ? 'text-yellow-500 hover:text-yellow-400' : 'text-black hover:text-gray-600',
@@ -183,7 +177,27 @@
               ]"
             >
               {{ item.star == 1 ? '★' : '☆' }}
+            </button> -->
+            <button
+                @click.stop="toggleStar(item)"
+                :class="[
+                    item.star == 1
+                        ? 'text-yellow-500 hover:text-yellow-400'
+                        : item.star == 2
+                            ? 'text-red-500 hover:text-red-400 scale-90'
+                            : 'text-black hover:text-gray-600',
+                    'transition transform font-normal'
+                ]"
+            >
+                {{
+                    item.star == 2
+                        ? '❤️'
+                        : item.star == 1
+                            ? '★'
+                            : '☆'
+                }}
             </button>
+
             {{ item.songName }}
           </h2>
 
@@ -212,7 +226,7 @@ export default {
   data() {
     return {
       fetchedData: null,
-      baseUrl: 'https://script.google.com/macros/s/AKfycbznvSmhM5j1qnEzuA8Dxkd_Ms9REW1A0zurB7RkG7SkM1VSeHLT4RQfXs2fnybys8vleA/exec',
+      baseUrl: 'https://script.google.com/macros/s/AKfycbxdK9lpCDREyVMpE9tE8GW4vwFXu457Nsi_4fRupTl6GMNJwKVGZSpHd1mlV8ut4Pnosw/exec',
       sortKey: 'lastPlayedAt',
       sortAsc: false,
       filteredArtist: null,
@@ -313,6 +327,18 @@ export default {
       this.incrementWord(song);
       song.lastPlayedAt = Math.floor(Date.now() / 1000);
       window.open(song.url, "_blank");
+
+      this.fetchedData.sort((a, b) => {
+        const aVal = a[this.sortKey] ?? '';
+        const bVal = b[this.sortKey] ?? '';
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return this.sortAsc ? aVal - bVal : bVal - aVal;
+        } else {
+          return this.sortAsc
+            ? String(aVal).localeCompare(String(bVal))
+            : String(bVal).localeCompare(String(aVal));
+        }
+      });
     },
     incrementWord(song) {
       // Locally increment the counter if you want visual feedback
@@ -344,13 +370,11 @@ export default {
       this.filteredArtist = name
     },
     toggleStar(song) {
-        const newStar = song.star == 1 ? 0 : 1;
+        // const newStar = song.star == 1 ? 0 : 1;
+        const newStar = (song.star + 1) % 3;
         song.star = newStar; // Optimistically update UI
 
         const url = `${this.baseUrl}?callback=jsonpCallback&action=toggleStar&songName=${encodeURIComponent(song.songName)}&artistName=${encodeURIComponent(song.artistName)}`;
-        console.log('-------- toggling star --------');
-        console.log(url);
-        console.log('--------------------------------');
 
         window.jsonpCallback = (data) => {
             console.log("API Response (toggleStar):", data);
@@ -365,6 +389,8 @@ export default {
             document.body.removeChild(script);
         };
     },
+
+    // ------------------- Tuner Methods -------------------
 
     openModal() {
       this.tempStatus.forEach(item => item.status = "not tuned")
@@ -585,6 +611,18 @@ export default {
         }
       })
       note.status = "tuning"
+    },
+
+    getBgColor(item) {
+      if (item.star == 1) {
+        return 'bg-yellow-50';
+      } else if (item.star == 2) {
+        return 'bg-rose-50';
+      } else if (this.filteredArtist && item.artistName === this.filteredArtist) {
+        return 'bg-blue-50';
+      } else {
+        return '';
+      }
     }
 
 
@@ -600,7 +638,7 @@ export default {
         }
 
         if (this.starFilter) {
-            data = data.filter(item => item.star === 1);
+            data = data.filter(item => item.star === 1 || item.star === 2);
         }
 
         return data;
