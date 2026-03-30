@@ -226,7 +226,7 @@ export default {
   data() {
     return {
       fetchedData: null,
-      baseUrl: 'https://script.google.com/macros/s/AKfycbxdK9lpCDREyVMpE9tE8GW4vwFXu457Nsi_4fRupTl6GMNJwKVGZSpHd1mlV8ut4Pnosw/exec',
+      baseUrl: 'https://script.google.com/macros/s/AKfycbwfU63fqq-I6ueDQPwHVMq3OGmJYAV6ay9Q7w_nQSZdNk2ncTwQ5F7qM15FUQrLcUyRwQ/exec',
       sortKey: 'lastPlayedAt',
       sortAsc: false,
       filteredArtist: null,
@@ -335,7 +335,7 @@ export default {
       song.plays = Number(song.plays || 0) + 1;
 
       // Build the API URL with the new parameters
-      const url = `${this.baseUrl}?callback=jsonpCallback&action=increment&songName=${encodeURIComponent(song.songName)}&artistName=${encodeURIComponent(song.artistName)}`;
+      const url = `${this.baseUrl}?callback=jsonpCallback&action=increment&songName=${encodeURIComponent(song?.songName.toString())}&artistName=${encodeURIComponent(song.artistName)}`;
       console.log('-------- incrementing play count --------');
       console.log(url);
       console.log('-----------------------------------------');
