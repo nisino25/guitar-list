@@ -328,17 +328,7 @@ export default {
       song.lastPlayedAt = Math.floor(Date.now() / 1000);
       window.open(song.url, "_blank");
 
-      this.fetchedData.sort((a, b) => {
-        const aVal = a[this.sortKey] ?? '';
-        const bVal = b[this.sortKey] ?? '';
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          return this.sortAsc ? aVal - bVal : bVal - aVal;
-        } else {
-          return this.sortAsc
-            ? String(aVal).localeCompare(String(bVal))
-            : String(bVal).localeCompare(String(aVal));
-        }
-      });
+      
     },
     incrementWord(song) {
       // Locally increment the counter if you want visual feedback
