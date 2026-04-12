@@ -1,6 +1,13 @@
 <template>
   <div class="p-8 bg-gray-100 min-h-screen">
     <div class="text-center relative">
+      <button
+          @click="showAddModal = true"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm absolute left-0 top-0 transition"
+      >
+          + Add Song
+      </button>
+
       <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6 inline-flex">🎸Song List</h1>
       <button
           @click="openModal"
@@ -156,6 +163,95 @@
 
     </div>
 
+    <!-- Add Song Modal -->
+    <div
+        v-if="showAddModal"
+        class="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+      >
+        <div class="bg-white rounded-xl shadow-xl w-[420px] p-6">
+
+            <!-- header -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Add Song</h2>
+                <button
+                    @click="showAddModal = false"
+                    class="text-gray-500 hover:text-black"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <!-- form -->
+            <div class="space-y-3">
+
+                <input
+                    v-model="newSong.url"
+                    placeholder="URL"
+                    class="w-full border rounded px-3 py-2"
+                />
+
+                <input
+                    v-model="newSong.songName"
+                    placeholder="Song Name"
+                    class="w-full border rounded px-3 py-2"
+                />
+
+                <input
+                    v-model="newSong.artistName"
+                    placeholder="Artist Name"
+                    class="w-full border rounded px-3 py-2"
+                />
+
+                <!-- type toggle -->
+                <div class="flex gap-2">
+                    <button
+                        @click="newSong.type = 'ultimate-guitar'"
+                        :class="[
+                            'flex-1 py-2 rounded border',
+                            newSong.type === 'ultimate-guitar'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white'
+                        ]"
+                    >
+                        ultimate-guitar
+                    </button>
+
+                    <button
+                        @click="newSong.type = 'Ufret'"
+                        :class="[
+                            'flex-1 py-2 rounded border',
+                            newSong.type === 'Ufret'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white'
+                        ]"
+                    >
+                        Ufret
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- actions -->
+            <div class="mt-5 flex justify-end gap-2">
+                <button
+                    @click="showAddModal = false"
+                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    @click="addSong"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                    Add
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+
     <div v-if="filteredData?.length > 0" class="grid grid-cols-3 gap-4">
       <div
         v-for="(item, index) in filteredData"
@@ -226,7 +322,7 @@ export default {
   data() {
     return {
       fetchedData: null,
-      baseUrl: 'https://script.google.com/macros/s/AKfycbwfU63fqq-I6ueDQPwHVMq3OGmJYAV6ay9Q7w_nQSZdNk2ncTwQ5F7qM15FUQrLcUyRwQ/exec',
+      baseUrl: 'https://script.google.com/macros/s/AKfycbxB0_D-Q46UKqrTq-fShg6aEBRp87Fdofc_e_X08vvWQMCrtfsMvamLUfmxKTktijYv_g/exec',
       sortKey: 'lastPlayedAt',
       sortAsc: false,
       filteredArtist: null,
@@ -271,6 +367,15 @@ export default {
         {note: 'E', status: "not tuned", pitch: 82.41},
         {note: 'E', status: "not tuned", pitch: 329.63},
       ],
+
+      showAddModal: false,
+      newSong: {
+          url: "",
+          songName: "",
+          artistName: "",
+          type: "ultimate-guitar"
+      },
+
 
     };
   },
@@ -613,7 +718,49 @@ export default {
       } else {
         return '';
       }
-    }
+    },
+
+    addSong() {
+      const { url, songName, artistName, type } = this.newSong;
+
+      if (!url || !songName || !artistName) {
+          alert("fill all fields bro");
+          return;
+      }
+
+      const apiUrl = `${this.baseUrl}?callback=jsonpCallback&action=addData&url=${encodeURIComponent(url)}&songName=${encodeURIComponent(songName)}&artistName=${encodeURIComponent(artistName)}&type=${encodeURIComponent(type)}`;
+
+      window.jsonpCallback = (data) => {
+          console.log("API Response (addData):", data);
+
+          if (data.success) {
+              this.showAddModal = false;
+
+              // reset form
+              this.newSong = {
+                  url: "",
+                  songName: "",
+                  artistName: "",
+                  type: "ultimate-guitar"
+              };
+
+              // refresh list
+              this.fetchData();
+          } else {
+              alert(data.message);
+          }
+      };
+
+      const script = document.createElement("script");
+      script.src = apiUrl;
+      script.async = true;
+      document.body.appendChild(script);
+
+      script.onload = () => {
+          document.body.removeChild(script);
+      };
+  }
+
 
 
   },
@@ -650,8 +797,8 @@ export default {
 </script>
 
 <style>
-body {
-  background: #f3f4f6;
-  @apply font-sans;
-}
+  body {
+    background: #f3f4f6;
+    @apply font-sans;
+  }
 </style>
