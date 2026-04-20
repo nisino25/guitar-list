@@ -252,7 +252,7 @@
     </div>
 
 
-    <div v-if="filteredData?.length > 0" class="grid grid-cols-3 gap-4">
+    <div v-if="!isLoading" class="grid grid-cols-3 gap-4">
       <div
         v-for="(item, index) in filteredData"
         :key="index"
@@ -375,6 +375,7 @@ export default {
           artistName: "",
           type: "ultimate-guitar"
       },
+      isLoading: true,
 
 
     };
@@ -385,6 +386,7 @@ export default {
       window.jsonpCallback = (data) => {
         console.log("API Response (fetchData):", data);
         if (data.success) {
+          this.isLoading = false;
           this.fetchedData = data.data.sort((a, b) => b.lastPlayedAt - a.lastPlayedAt);
         } else {
           console.error("Error fetching data:", data.message);
@@ -721,45 +723,49 @@ export default {
     },
 
     addSong() {
-      const { url, songName, artistName, type } = this.newSong;
+        const { url, songName, artistName, type } = this.newSong;
 
-      if (!url || !songName || !artistName) {
-          alert("fill all fields bro");
-          return;
-      }
+        if (!url || !songName || !artistName) {
+            alert("fill all fields bro");
+            return;
+        }
 
-      const apiUrl = `${this.baseUrl}?callback=jsonpCallback&action=addData&url=${encodeURIComponent(url)}&songName=${encodeURIComponent(songName)}&artistName=${encodeURIComponent(artistName)}&type=${encodeURIComponent(type)}`;
+        this.isLoading = true;
 
-      window.jsonpCallback = (data) => {
-          console.log("API Response (addData):", data);
+        const apiUrl = `${this.baseUrl}?callback=jsonpCallback&action=addData&url=${encodeURIComponent(url)}&songName=${encodeURIComponent(songName)}&artistName=${encodeURIComponent(artistName)}&type=${encodeURIComponent(type)}`;
+        this.showAddModal = false;
 
-          if (data.success) {
-              this.showAddModal = false;
+        window.jsonpCallback = (data) => {
+            console.log("API Response (addData):", data);
 
-              // reset form
-              this.newSong = {
-                  url: "",
-                  songName: "",
-                  artistName: "",
-                  type: "ultimate-guitar"
-              };
+            if (data.success) {
+                // this.isLoading = false;
+                
 
-              // refresh list
-              this.fetchData();
-          } else {
-              alert(data.message);
-          }
-      };
+                // reset form
+                this.newSong = {
+                    url: "",
+                    songName: "",
+                    artistName: "",
+                    type: "ultimate-guitar"
+                };
 
-      const script = document.createElement("script");
-      script.src = apiUrl;
-      script.async = true;
-      document.body.appendChild(script);
+                // refresh list
+                this.fetchData();
+            } else {
+                alert(data.message);
+            }
+        };
 
-      script.onload = () => {
-          document.body.removeChild(script);
-      };
-  }
+        const script = document.createElement("script");
+        script.src = apiUrl;
+        script.async = true;
+        document.body.appendChild(script);
+
+        script.onload = () => {
+            document.body.removeChild(script);
+        };
+    }
 
 
 
