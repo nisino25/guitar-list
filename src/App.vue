@@ -93,8 +93,19 @@
                   {{ detectedWave?.toFixed(2) }} Hz
               </div>
 
-              <div class="text-lg">
-                  Diff: {{ (detectedWave - currentTuningNote?.pitch)?.toFixed(2) }} Hz
+              <!-- tuning meter -->
+              <div v-if="cents !== null" class="relative w-64 h-3 mx-auto mt-4 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="absolute top-0 bottom-0 bg-green-200" :style="tunedZoneStyle"></div>
+                  <div class="absolute top-0 bottom-0 left-1/2 w-px bg-gray-400"></div>
+                  <div
+                      class="absolute top-1/2 w-4 h-4 rounded-full -mt-2 -ml-2 transition-all duration-100"
+                      :class="Math.abs(cents) < tunedThresholdCents ? 'bg-green-500' : 'bg-red-500'"
+                      :style="{ left: needlePositionPercent + '%' }"
+                  ></div>
+              </div>
+
+              <div v-if="cents !== null && Math.abs(cents) < tunedThresholdCents" class="text-sm text-green-600 mt-2">
+                  Perfect!
               </div>
             </div>
 
@@ -152,7 +163,7 @@
                           'bg-yellow-400': note.status === 'tuning',
                           'bg-green-500': note.status === 'tuned'
                       }"
-                      @click="selectNote(note)"
+                      @click="selectNote(index)"
                     ></div>
                     <span class="text-gray-700 font-medium">{{ note.note }}</span>
                 </div>  
@@ -342,11 +353,8 @@ export default {
       targetWave: '',
       detectedWave: null,
 
-      diff: null,
-      
-
-
       tolerance: 5,
+      tunedThresholdCents: 5,
 
       targetFrequencies: {
           E2: 82.41,
@@ -363,10 +371,15 @@ export default {
 
         {note: 'A', status: "not tuned", pitch: 110.00},
         {note: 'B', status: "not tuned", pitch: 246.94},
-        
+
         {note: 'E', status: "not tuned", pitch: 82.41},
         {note: 'E', status: "not tuned", pitch: 329.63},
       ],
+      selectedNoteIndex: 4,
+      // tempStatus indices ordered from lowest to highest string (E2, A2, D3, G3, B3, E4)
+      tuningOrder: [4, 2, 0, 1, 3, 5],
+      tunedSinceTimestamp: null,
+      holdToAdvanceMs: 1500,
 
       showAddModal: false,
       newSong: {
@@ -492,9 +505,12 @@ export default {
     openModal() {
       this.tempStatus.forEach(item => item.status = "not tuned")
 
+      this.selectedNoteIndex = 4
       this.tempStatus[4].status = "tuning"
+      this.tunedSinceTimestamp = null
       // this.tempStatus[0].status = true
       this.showModal = true
+      this.startTuner()
     },
 
     closeModal() {
@@ -518,7 +534,13 @@ export default {
 
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
 
-        this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        try {
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        } catch (err) {
+            alert("Couldn't access the microphone. Please allow mic access and try again.")
+            this.stopTuner()
+            return
+        }
 
         const source = this.audioContext.createMediaStreamSource(this.mediaStream)
 
@@ -545,7 +567,7 @@ export default {
               // this.detectedWave = this.detectedWave * 0.8 + newFreq * 0.2
               const newFreq = this.getPitch(dataArray, this.audioContext.sampleRate)
 
-              if (newFreq) {
+              if (newFreq && isFinite(newFreq)) {
                   if (!this.detectedWave) {
                       this.detectedWave = newFreq
                   } else {
@@ -555,12 +577,35 @@ export default {
               }
 
 
-  
+
               const note = this.getClosestNote(this.detectedWave)
-  
+
               this.detectedNote = note
-  
+
+              if (this.currentTuningNote && this.detectedWave) {
+                  const isTuned = Math.abs(this.cents) < this.tunedThresholdCents
+
+                  if (isTuned) {
+                      this.currentTuningNote.status = "tuned"
+                      if (!this.tunedSinceTimestamp) {
+                          this.tunedSinceTimestamp = Date.now()
+                      }
+                  } else {
+                      this.tunedSinceTimestamp = null
+                      this.currentTuningNote.status = "tuning"
+                  }
               }
+
+              }
+
+              // Checked every frame regardless of current volume, so a note that
+              // rings out (drops below volumeThreshold) doesn't stall the countdown
+              // before it reaches holdToAdvanceMs.
+              if (this.tunedSinceTimestamp && Date.now() - this.tunedSinceTimestamp >= this.holdToAdvanceMs) {
+                  this.playSuccessSound()
+                  this.advanceToNextNote()
+              }
+
                 if (this.isTuning) {
                     requestAnimationFrame(detect)
                 }
@@ -576,11 +621,13 @@ export default {
 
         if (this.mediaStream) {
             this.mediaStream.getTracks().forEach(track => track.stop())
+            this.mediaStream = null
         }
 
-        if (this.audioContext) {
+        if (this.audioContext && this.audioContext.state !== 'closed') {
             this.audioContext.close()
         }
+        this.audioContext = null
 
         this.currentNote = ''
         this.detectedNote = ''
@@ -631,6 +678,8 @@ export default {
         }
 
         let T0 = maxpos
+        if (!T0 || T0 <= 0) return null
+
         let frequency = sampleRate / T0
 
         return frequency
@@ -650,6 +699,35 @@ export default {
         const rms = Math.sqrt(sum / dataArray.length)
 
         return rms
+    },
+
+    playSuccessSound() {
+        if (!this.audioContext) return
+
+        const ctx = this.audioContext
+        const now = ctx.currentTime
+
+        const playTone = (freq, startTime, duration) => {
+            const osc = ctx.createOscillator()
+            const gain = ctx.createGain()
+
+            osc.type = 'sine'
+            osc.frequency.value = freq
+
+            gain.gain.setValueAtTime(0, startTime)
+            gain.gain.linearRampToValueAtTime(0.3, startTime + 0.02)
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+
+            osc.connect(gain)
+            gain.connect(ctx.destination)
+
+            osc.start(startTime)
+            osc.stop(startTime + duration)
+        }
+
+        // pleasant two-note chime (A5 -> C#6)
+        playTone(880.00, now, 0.25)
+        playTone(1108.73, now + 0.08, 0.3)
     },
 
     findPeak(dataArray) {
@@ -691,23 +769,30 @@ export default {
 
         return closestNote
     },
-    getTuningStatus(diff){
-
-        if(Math.abs(diff) < 0.5) return "Perfect"
-
-        if(diff > 0) return "Sharp"
-
-        return "Flat"
-
-    },
-
-    selectNote(note){
+    selectNote(index){
       this.tempStatus.forEach(item => {
         if(item.status === "tuning"){
           item.status = "not tuned"
         }
       })
-      note.status = "tuning"
+      this.selectedNoteIndex = index
+      this.tunedSinceTimestamp = null
+      if (this.tempStatus[index].status !== "tuned") {
+        this.tempStatus[index].status = "tuning"
+      }
+    },
+
+    advanceToNextNote(){
+      const currentPos = this.tuningOrder.indexOf(this.selectedNoteIndex)
+      if (currentPos === -1 || currentPos === this.tuningOrder.length - 1) return
+
+      const nextIndex = this.tuningOrder[currentPos + 1]
+      this.selectedNoteIndex = nextIndex
+      this.detectedWave = null
+      this.tunedSinceTimestamp = null
+      if (this.tempStatus[nextIndex].status !== "tuned") {
+        this.tempStatus[nextIndex].status = "tuning"
+      }
     },
 
     getBgColor(item) {
@@ -787,7 +872,25 @@ export default {
         return data;
     },
     currentTuningNote() {
-      return this.tempStatus.find(item => item.status === "tuning");
+      return this.tempStatus[this.selectedNoteIndex];
+    },
+    cents() {
+      if (!this.detectedWave || !this.currentTuningNote) return null
+      return 1200 * Math.log2(this.detectedWave / this.currentTuningNote.pitch)
+    },
+    clampedCents() {
+      if (this.cents === null) return 0
+      return Math.max(-50, Math.min(50, this.cents))
+    },
+    needlePositionPercent() {
+      return this.clampedCents + 50
+    },
+    tunedZoneStyle() {
+      const widthPercent = this.tunedThresholdCents * 2
+      return {
+        left: (50 - this.tunedThresholdCents) + '%',
+        width: widthPercent + '%'
+      }
     }
   },
   mounted() {
