@@ -16,7 +16,7 @@
           Open Tuner
       </button>
     </div>
-    <div class="flex flex-wrap gap-2 justify-center mb-4">
+    <div class="flex flex-wrap gap-2 justify-center mb-2">
       <button
         v-for="key in ['lastPlayedAt', 'artistName', 'plays', 'songName']"
         :key="key"
@@ -50,9 +50,20 @@
       >
         {{ starFilter ? '★' : '☆' }}
       </button>
+    </div>
 
-
-
+    <div class="flex flex-wrap gap-2 justify-center mb-4">
+      <button
+        v-for="playlist in playlists"
+        :key="playlist"
+        @click="playlistFilter = playlistFilter === playlist ? null : playlist"
+        class="px-3 py-1 rounded border text-sm font-medium transition"
+        :class="playlistFilter === playlist
+          ? 'bg-purple-600 text-white border-purple-600'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-purple-50'"
+      >
+        {{ playlistLabel(playlist) }}
+      </button>
     </div>
 
 
@@ -262,6 +273,56 @@
         </div>
     </div>
 
+    <!-- Playlist Modal -->
+    <div
+        v-if="showPlaylistModal"
+        class="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+    >
+        <div class="bg-white rounded-xl shadow-xl w-[420px] p-6">
+
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Playlists</h2>
+                <button
+                    @click="closePlaylistModal"
+                    class="text-gray-500 hover:text-black"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <label
+                    v-for="playlist in sortedPlaylistsForModal"
+                    :key="playlist"
+                    class="flex items-center gap-3 px-3 py-2 rounded border cursor-pointer hover:bg-gray-50"
+                >
+                    <input
+                        type="checkbox"
+                        :checked="(playlistModalSong.playlists || []).includes(playlist)"
+                        @change="togglePlaylist(playlistModalSong, playlist)"
+                    />
+                    <span>{{ playlistLabel(playlist) }}</span>
+                </label>
+            </div>
+
+            <div class="flex gap-2 mt-4">
+                <input
+                    v-model="newPlaylistName"
+                    @keyup.enter="addNewPlaylist"
+                    placeholder="+ New Playlist"
+                    class="flex-1 border rounded px-3 py-2 text-sm"
+                />
+                <button
+                    @click="addNewPlaylist"
+                    class="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
+                >
+                    Add
+                </button>
+            </div>
+
+        </div>
+    </div>
+
 
     <div v-if="!isLoading" class="grid grid-cols-3 gap-4">
       <div
@@ -316,7 +377,16 @@
         <!-- Row 2: Artist + Timestamp -->
         <div class="flex justify-between text-gray-600 text-sm">
           <p @click.stop="filterArtist(item.artistName)">{{ item.artistName }}</p>
-          <p class="text-xs"><strong class="text-sm">{{ daysAgo(item.lastPlayedAt) }}</strong>日前</p>
+          <div class="flex items-center gap-2">
+            <button
+                @click.stop="openPlaylistModal(item)"
+                class="text-gray-400 hover:text-purple-600 transition"
+                :class="{ 'text-purple-600': (item.playlists || []).length }"
+            >
+                📁
+            </button>
+            <p class="text-xs"><strong class="text-sm">{{ daysAgo(item.lastPlayedAt) }}</strong>日前</p>
+          </div>
         </div>
       </div>
 
@@ -338,6 +408,17 @@ export default {
       sortAsc: false,
       filteredArtist: null,
       starFilter: false,
+
+      basePlaylists: ['Becca', 'Cozy', 'Practicing'],
+      playlistLabels: {
+        Becca: 'Sing with Becca',
+        Cozy: 'Cozy Songs',
+        Practicing: 'Practicing'
+      },
+      newPlaylistName: '',
+      playlistFilter: null,
+      showPlaylistModal: false,
+      playlistModalSong: null,
 
       showModal: false,
 
@@ -400,7 +481,12 @@ export default {
         console.log("API Response (fetchData):", data);
         if (data.success) {
           this.isLoading = false;
-          this.fetchedData = data.data.sort((a, b) => b.lastPlayedAt - a.lastPlayedAt);
+          this.fetchedData = data.data
+            .map(item => ({
+              ...item,
+              playlists: (item.playlists || '').toString().split(',').filter(Boolean)
+            }))
+            .sort((a, b) => b.lastPlayedAt - a.lastPlayedAt);
         } else {
           console.error("Error fetching data:", data.message);
         }
@@ -488,6 +574,51 @@ export default {
 
         window.jsonpCallback = (data) => {
             console.log("API Response (toggleStar):", data);
+        };
+
+        const script = document.createElement("script");
+        script.src = url;
+        script.async = true;
+        document.body.appendChild(script);
+
+        script.onload = () => {
+            document.body.removeChild(script);
+        };
+    },
+
+    openPlaylistModal(song) {
+        this.playlistModalSong = song;
+        this.showPlaylistModal = true;
+    },
+
+    closePlaylistModal() {
+        this.showPlaylistModal = false;
+        this.playlistModalSong = null;
+        this.newPlaylistName = '';
+    },
+
+    playlistLabel(playlist) {
+        return this.playlistLabels[playlist] || playlist;
+    },
+
+    addNewPlaylist() {
+        const name = this.newPlaylistName.trim();
+        if (!name || !this.playlistModalSong) return;
+
+        this.togglePlaylist(this.playlistModalSong, name);
+        this.newPlaylistName = '';
+    },
+
+    togglePlaylist(song, playlist) {
+        const current = song.playlists || [];
+        song.playlists = current.includes(playlist)
+            ? current.filter(p => p !== playlist)
+            : [...current, playlist]; // Optimistically update UI
+
+        const url = `${this.baseUrl}?callback=jsonpCallback&action=togglePlaylist&songName=${encodeURIComponent(song.songName)}&artistName=${encodeURIComponent(song.artistName)}&playlist=${encodeURIComponent(playlist)}`;
+
+        window.jsonpCallback = (data) => {
+            console.log("API Response (togglePlaylist):", data);
         };
 
         const script = document.createElement("script");
@@ -869,10 +1000,23 @@ export default {
             data = data.filter(item => item.star === 1 || item.star === 2);
         }
 
+        if (this.playlistFilter) {
+            data = data.filter(item => (item.playlists || []).includes(this.playlistFilter));
+        }
+
         return data;
     },
     currentTuningNote() {
       return this.tempStatus[this.selectedNoteIndex];
+    },
+    playlists() {
+      const fromSongs = (this.fetchedData || []).flatMap(s => s.playlists || []);
+      return [...new Set([...this.basePlaylists, ...fromSongs])];
+    },
+    sortedPlaylistsForModal() {
+      if (!this.playlistModalSong) return this.playlists;
+      const checked = this.playlistModalSong.playlists || [];
+      return [...this.playlists].sort((a, b) => checked.includes(b) - checked.includes(a));
     },
     cents() {
       if (!this.detectedWave || !this.currentTuningNote) return null
