@@ -1,7 +1,14 @@
 <template>
   <div class="px-8 pb-8 bg-gray-200 min-h-screen">
     <!-- Sticky header: one row -->
-    <div class="sticky top-0 z-40 -mx-8 px-8 py-3 mb-4 bg-gray-200/90 backdrop-blur border-b border-gray-300/60">
+    <!-- Top padding includes the iPad status bar area (black-translucent status bar draws over the page) -->
+    <div
+      class="sticky top-0 z-40 -mx-8 px-8 pb-3 mb-4 bg-gray-200/95 backdrop-blur transition-shadow duration-200"
+      :style="{
+        paddingTop: 'calc(0.75rem + env(safe-area-inset-top))',
+        boxShadow: isScrolled ? '0 6px 16px -8px rgba(0, 0, 0, 0.3)' : 'none'
+      }"
+    >
       <div class="flex items-center gap-2">
         <!-- Title doubles as the Songs / Lab switch -->
         <button @click="page = page === 'songs' ? 'lab' : 'songs'" class="shrink-0 px-1 active:scale-95 transition">
@@ -652,6 +659,7 @@ export default {
       playlistFilter: null,
       showPlaylistMenu: false,
       showSortMenu: false,
+      isScrolled: false,
       luckyPicks: null,
       sortOptions: [
         { key: 'lastPlayedAt', label: 'Recent' },
@@ -1355,6 +1363,9 @@ export default {
       };
       return themes[key] || themes.plain;
     },
+    onScroll() {
+      this.isScrolled = window.scrollY > 4;
+    },
     // 6 random songs that haven't been played since midnight today
     pickLucky() {
       const startOfToday = new Date().setHours(0, 0, 0, 0) / 1000;
@@ -1498,16 +1509,18 @@ export default {
 
     // this.openModal()
     this.fetchData();
+    window.addEventListener('scroll', this.onScroll, { passive: true });
   },
   beforeUnmount() {
     this.stopTuner()
+    window.removeEventListener('scroll', this.onScroll);
   }
 };
 </script>
 
 <style>
-  body {
-    background: #f3f4f6;
+  html, body {
+    background: #e5e7eb;
     @apply font-sans;
   }
 </style>
