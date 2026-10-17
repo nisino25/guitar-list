@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <mask id="notch">
+      <rect width="64" height="64" fill="#fff"/>
+      <circle cx="4" cy="32" r="7" fill="#000"/>
+      <circle cx="60" cy="32" r="7" fill="#000"/>
+    </mask>
+  </defs>
+  <rect x="4" y="12" width="56" height="40" rx="7" fill="#4f46e5" mask="url(#notch)"/>
+  <path d="M46 16v32" stroke="#a5b4fc" stroke-width="2" stroke-dasharray="3 3"/>
+  <path d="M30 22v16.5" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M30 22c3 1.5 6 3 7 6.5" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <ellipse cx="25.5" cy="39" rx="5.2" ry="4" fill="#fff" transform="rotate(-20 25.5 39)"/>
+</svg>
