@@ -108,7 +108,7 @@
             v-if="page === 'songs'"
             @click="pickLucky"
             class="h-9 px-3 shrink-0 rounded-full bg-emerald-500 text-white text-sm font-semibold shadow-sm hover:bg-emerald-600 transition flex items-center gap-1.5"
-            title="Feeling lucky: 6 songs you haven't played today"
+            title="Feeling lucky: 9 songs you haven't played today"
         >
             <AppIcon name="shuffle" :size="15" />
             Lucky
@@ -1366,7 +1366,7 @@ export default {
     onScroll() {
       this.isScrolled = window.scrollY > 4;
     },
-    // 6 random songs that haven't been played since midnight today
+    // 9 random songs that haven't been played since midnight today
     pickLucky() {
       const startOfToday = new Date().setHours(0, 0, 0, 0) / 1000;
       const pool = (this.fetchedData || []).filter(song => !song.lastPlayedAt || song.lastPlayedAt < startOfToday);
@@ -1374,7 +1374,7 @@ export default {
         const j = Math.floor(Math.random() * (i + 1));
         [pool[i], pool[j]] = [pool[j], pool[i]];
       }
-      this.luckyPicks = pool.slice(0, 6);
+      this.luckyPicks = pool.slice(0, 9);
     },
     recencyBlock(item) {
       const days = Number(this.daysAgo(item.lastPlayedAt));
