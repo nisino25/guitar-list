@@ -5,7 +5,7 @@
     <div
       class="sticky top-0 z-40 -mx-8 px-8 pb-3 mb-4 bg-gray-200/95 backdrop-blur transition-shadow duration-200"
       :style="{
-        paddingTop: 'calc(0.75rem + env(safe-area-inset-top))',
+        paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
         boxShadow: isScrolled ? '0 6px 16px -8px rgba(0, 0, 0, 0.3)' : 'none'
       }"
     >
@@ -417,7 +417,7 @@
           <div class="flex-1 min-w-0">
             <div class="truncate" :class="songCardStyle.title">{{ item.songName }}</div>
             <div class="flex items-center gap-2 text-[11px]" :class="songCardStyle.sub">
-              <span class="flex-1 min-w-0 truncate">{{ item.artistName }}</span>
+              <span class="flex-1 min-w-0 truncate" @click.stop="filterArtist(item.artistName)">{{ item.artistName }}</span>
               <span class="shrink-0 flex gap-1" :class="songCardStyle.meta">
                 <span class="w-7 text-right font-semibold whitespace-nowrap">{{ item.plays || 0 }}回</span>
                 <span class="w-12 text-right whitespace-nowrap">{{ playedAgo(item.lastPlayedAt, '日前') }}</span>
@@ -588,7 +588,7 @@
           <div class="flex-1 min-w-0">
             <div class="truncate" :class="d3ThemeStyle.title">{{ item.songName }}</div>
             <div class="flex items-center gap-2 text-[11px]" :class="d3ThemeStyle.sub">
-              <span class="flex-1 min-w-0 truncate">{{ item.artistName }}</span>
+              <span class="flex-1 min-w-0 truncate" @click.stop="filterArtist(item.artistName)">{{ item.artistName }}</span>
               <span class="shrink-0 flex gap-1" :class="d3ThemeStyle.meta">
                 <span class="w-7 text-right font-semibold whitespace-nowrap">{{ item.plays || 0 }}回</span>
                 <span class="w-12 text-right whitespace-nowrap">{{ playedAgo(item.lastPlayedAt, '日前') }}</span>
